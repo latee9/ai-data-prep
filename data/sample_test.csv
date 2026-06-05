@@ -1,0 +1,16 @@
+id,name,age,city,salary,join_date,email,department
+1,ahmed ali,28,cairo,5000,2022-01-15,ahmed@example.com,IT
+2,SARA HASSAN,35,alexandria,8000,15/03/2021,sara@example.com,HR
+3,Mohamed Kamal,,giza,6500,2023-06-01,mohamed@example.com,Finance
+4,ahmed ali,28,cairo,5000,2022-01-15,ahmed@example.com,IT
+5,  layla omar  ,42,cairo,,2020-11-20,layla@example.com,IT
+6,YOUSSEF SAID,30,ALEXANDRIA,7200,30-07-2022,youssef@example.com,Finance
+7,nour ahmed,25,giza,4500,2023-09-10,,HR
+8,khaled mostafa,50,cairo,12000,2019-05-05,khaled@example.com,Management
+9,  Sara Hassan  ,35,Alexandria,8000,2021-03-15,sara@example.com,HR
+10,amira tarek,,aswan,3800,2024-01-01,amira@example.com,IT
+11,KHALED MOSTAFA,50,Cairo,12000,05-05-2019,khaled@example.com,Management
+12,omar fathy,33,luxor,,2021-08-18,omar@example.com,Finance
+13,hana ibrahim,27,cairo,5500,2022-12-30,hana@example.com,
+14,tarek nasser,45,alexandria,9500,2018-03-22,tarek@example.com,HR
+15,nour ahmed,25,giza,4500,10/09/2023,,HR

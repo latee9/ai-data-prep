@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Data Prep — Intelligent Data Cleaning Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#6C63FF;--purple-dark:#3B37CC;--purple-light:#A78BFA;
+  --bg:#0A0C16;--bg2:#111328;--bg3:#1A1D2E;
+  --text:#F0F0FF;--text-muted:rgba(240,240,255,0.55);
+  --border:rgba(108,99,255,0.18);
+  --green:#00C878;--yellow:#FFB800;--red:#FF5C5C;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--purple);border-radius:3px}
+
+/* ── Noise overlay ────────────────────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.4;
+}
+
+/* ── Utility ──────────────────────────────────────────────────────── */
+.container{max-width:1160px;margin:0 auto;padding:0 1.5rem}
+.gradient-text{background:linear-gradient(135deg,#fff 0%,var(--purple-light) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);border-radius:20px;padding:.25rem .8rem;font-size:.72rem;font-weight:600;color:var(--purple-light);letter-spacing:.06em;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.6rem;border-radius:10px;font-weight:600;font-size:.9rem;cursor:pointer;transition:all .22s ease;border:none}
+.btn-primary{background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff;box-shadow:0 4px 20px rgba(108,99,255,.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(108,99,255,.5)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--purple);background:rgba(108,99,255,.08);transform:translateY(-2px)}
+.section-label{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--purple-light);margin-bottom:.8rem}
+.section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.section-sub{font-size:1rem;color:var(--text-muted);max-width:560px;margin:.8rem auto 0}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:1.8rem;transition:transform .22s,box-shadow .22s,border-color .22s}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(108,99,255,.15);border-color:rgba(108,99,255,.35)}
+
+/* ── NAV ──────────────────────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 0;transition:background .3s,backdrop-filter .3s}
+nav.scrolled{background:rgba(10,12,22,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:.6rem;font-weight:800;font-size:1.1rem}
+.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--purple),var(--purple-dark));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.nav-links{display:flex;align-items:center;gap:1.8rem}
+.nav-links a{font-size:.88rem;font-weight:500;color:var(--text-muted);transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;gap:.7rem}
+
+/* ── HERO ─────────────────────────────────────────────────────────── */
+#hero{min-height:100vh;display:flex;align-items:center;padding:7rem 0 4rem;position:relative;overflow:hidden}
+.hero-glow{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,.18) 0%,transparent 70%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none}
+.hero-glow2{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.1) 0%,transparent 70%);bottom:0;right:0;pointer-events:none}
+.hero-content{text-align:center;position:relative;z-index:1}
+.hero-title{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:900;letter-spacing:-.04em;line-height:1.08;margin:.8rem 0 1.2rem}
+.hero-sub{font-size:1.1rem;color:var(--text-muted);max-width:600px;margin:0 auto 2rem}
+.hero-cta{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.hero-stats{display:flex;justify-content:center;gap:3rem;margin-top:3.5rem;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-val{font-size:1.8rem;font-weight:800;letter-spacing:-.03em;color:#fff}
+.hero-stat-label{font-size:.75rem;color:var(--text-muted);font-weight:500;margin-top:.1rem}
+
+/* ── TRUSTED BY ───────────────────────────────────────────────────── */
+#trust{padding:2.5rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg2)}
+.trust-inner{display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap}
+.trust-label{font-size:.72rem;color:var(--text-muted);font-weight:600;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.trust-logos{display:flex;gap:2.5rem;align-items:center;flex-wrap:wrap;justify-content:center}
+.trust-logo{font-size:.9rem;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:-.01em;transition:color .2s}
+.trust-logo:hover{color:rgba(255,255,255,.6)}
+
+/* ── FEATURES ─────────────────────────────────────────────────────── */
+#features{padding:7rem 0;text-align:center}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.2rem;margin-top:3.5rem;text-align:left}
+.feature-icon{width:44px;height:44px;background:linear-gradient(135deg,rgba(108,99,255,.25),rgba(108,99,255,.1));border:1px solid rgba(108,99,255,.3);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1rem}
+.feature-title{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+.feature-desc{font-size:.85rem;color:var(--text-muted);line-height:1.6}
+.feature-tag{display:inline-block;margin-top:.8rem;font-size:.68rem;font-weight:600;padding:.15rem .6rem;border-radius:6px;letter-spacing:.04em}
+.tag-new{background:rgba(108,99,255,.15);color:var(--purple-light)}
+.tag-hot{background:rgba(255,92,92,.12);color:#FF8888}
+.tag-pro{background:rgba(255,184,0,.1);color:var(--yellow)}
+
+/* ── HOW IT WORKS ─────────────────────────────────────────────────── */
+#how{padding:7rem 0;background:var(--bg2)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;margin-top:3.5rem;position:relative}
+.steps::before{content:'';position:absolute;top:32px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--purple),transparent);opacity:.3}
+.step{text-align:center;padding:1.5rem 1rem}
+.step-num{width:56px;height:56px;background:linear-gradient(135deg,var(--purple),var(--purple-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;margin:0 auto 1.2rem;box-shadow:0 0 20px rgba(108,99,255,.35)}
+.step-title{font-size:.95rem;font-weight:700;margin-bottom:.4rem}
+.step-desc{font-size:.82rem;color:var(--text-muted)}
+
+/* ── LANGUAGES ────────────────────────────────────────────────────── */
+#languages{padding:5rem 0;text-align:center}
+.lang-grid{display:flex;justify-content:center;flex-wrap:wrap;gap:.8rem;margin-top:2rem}
+.lang-pill{display:flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:30px;padding:.5rem 1.1rem;font-size:.85rem;font-weight:500;transition:all .2s}
+.lang-pill:hover{border-color:var(--purple);background:rgba(108,99,255,.1);transform:translateY(-2px)}
+.lang-flag{font-size:1.1rem}
+
+/* ── PRICING ──────────────────────────────────────────────────────── */
+#pricing{padding:7rem 0;text-align:center;background:var(--bg2)}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2rem;margin-top:3.5rem;text-align:left}
+.pricing-card{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:2rem;position:relative;transition:transform .22s,box-shadow .22s}
+.pricing-card.popular{border-color:var(--purple);box-shadow:0 0 40px rgba(108,99,255,.2)}
+.pricing-card:hover{transform:translateY(-5px);box-shadow:0 16px 50px rgba(108,99,255,.18)}
+.popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--purple),var(--purple-dark));color:#fff;font-size:.68rem;font-weight:700;padding:.25rem .9rem;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.plan-name{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--purple-light);margin-bottom:.6rem}
+.plan-price{font-size:2.8rem;font-weight:900;letter-spacing:-.04em;line-height:1}
+.plan-price span{font-size:1rem;font-weight:500;color:var(--text-muted)}
+.plan-desc{font-size:.82rem;color:var(--text-muted);margin:.6rem 0 1.4rem}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.8rem}
+.plan-features li{font-size:.84rem;display:flex;align-items:center;gap:.6rem;color:var(--text-muted)}
+.plan-features li.active{color:var(--text)}
+.check{color:var(--green);font-size:.9rem}
+.cross{color:rgba(255,255,255,.2);font-size:.9rem}
+
+/* ── TESTIMONIALS ─────────────────────────────────────────────────── */
+#testimonials{padding:7rem 0;text-align:center}
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem;margin-top:3.5rem;text-align:left}
+.testi-card{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:1.6rem}
+.testi-stars{color:#FFB800;font-size:.9rem;margin-bottom:.8rem;letter-spacing:.1em}
+.testi-text{font-size:.88rem;line-height:1.7;color:var(--text-muted);font-style:italic;margin-bottom:1.2rem}
+.testi-author{display:flex;align-items:center;gap:.7rem}
+.testi-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--purple-dark));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0}
+.testi-name{font-size:.85rem;font-weight:600}
+.testi-role{font-size:.72rem;color:var(--text-muted)}
+
+/* ── CTA SECTION ──────────────────────────────────────────────────── */
+#cta{padding:7rem 0;text-align:center}
+.cta-box{background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(59,55,204,.1));border:1px solid rgba(108,99,255,.25);border-radius:24px;padding:4rem 2rem;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(108,99,255,.15),transparent 70%);pointer-events:none}
+.cta-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-.03em;margin:.6rem 0 1rem}
+.cta-sub{font-size:.95rem;color:var(--text-muted);max-width:500px;margin:0 auto 2rem}
+.cta-form{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;max-width:480px;margin:0 auto}
+.cta-input{flex:1;min-width:200px;padding:.75rem 1.1rem;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-size:.9rem;font-family:inherit;outline:none;transition:border .2s}
+.cta-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(108,99,255,.2)}
+.cta-input::placeholder{color:var(--text-muted)}
+
+/* ── FOOTER ───────────────────────────────────────────────────────── */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:3rem 0 2rem}
+.footer-inner{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2rem}
+.footer-brand-name{font-size:1.1rem;font-weight:800;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem}
+.footer-brand-desc{font-size:.82rem;color:var(--text-muted);line-height:1.7;max-width:240px}
+.footer-col h4{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--purple-light);margin-bottom:1rem}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+.footer-col ul li a{font-size:.84rem;color:var(--text-muted);transition:color .2s}
+.footer-col ul li a:hover{color:var(--text)}
+.footer-bottom{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:.78rem;color:var(--text-muted)}
+.footer-langs{display:flex;gap:.8rem;flex-wrap:wrap}
+.footer-lang{font-size:.75rem;color:var(--text-muted);transition:color .2s}
+.footer-lang:hover{color:var(--text)}
+
+/* ── Animations ───────────────────────────────────────────────────── */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;animation:fadeUp .6s ease forwards}
+.delay-1{animation-delay:.1s}.delay-2{animation-delay:.2s}.delay-3{animation-delay:.3s}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .nav-links,.nav-cta{display:none}
+  .footer-inner{grid-template-columns:1fr 1fr}
+  .steps::before{display:none}
+  .hero-stats{gap:1.8rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────────────── -->
+<nav id="navbar">
+  <div class="container nav-inner">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">🧹</div>
+      AI Data Prep
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#testimonials">Reviews</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#pricing" class="btn btn-outline">View Plans</a>
+      <a href="#cta" class="btn btn-primary">Start Free →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="badge fade-up">✦ AI-Powered · No Code Required</div>
+      <h1 class="hero-title fade-up delay-1">
+        Clean Messy Data<br/><span class="gradient-text">10× Faster with AI</span>
+      </h1>
+      <p class="hero-sub fade-up delay-2">
+        Upload any CSV or Excel file. Let AI detect issues, remove duplicates,
+        fix dates, mask sensitive data, and export clean results — in seconds.
+      </p>
+      <div class="hero-cta fade-up delay-3">
+        <a href="#cta" class="btn btn-primary" style="font-size:1rem;padding:.9rem 2rem">
+          🚀 Start for Free
+        </a>
+        <a href="#features" class="btn btn-outline" style="font-size:1rem;padding:.9rem 2rem">
+          See Features ↓
+        </a>
+      </div>
+      <div class="hero-stats fade-up delay-3">
+        <div class="hero-stat">
+          <div class="hero-stat-val">10×</div>
+          <div class="hero-stat-label">Faster than manual</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">6</div>
+          <div class="hero-stat-label">Languages supported</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">GDPR</div>
+          <div class="hero-stat-label">PII masking ready</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-val">7+</div>
+          <div class="hero-stat-label">Data sources</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRUSTED BY ────────────────────────────────────────────────────── -->
+<div id="trust">
+  <div class="container">
+    <div class="trust-inner">
+      <span class="trust-label">Trusted by teams at</span>
+      <div class="trust-logos">
+        <span class="trust-logo">Acme Corp</span>
+        <span class="trust-logo">DataFlow Inc</span>
+        <span class="trust-logo">NorthStar Analytics</span>
+        <span class="trust-logo">PivotLabs</span>
+        <span class="trust-logo">ClearMetrics</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FEATURES ──────────────────────────────────────────────────────── -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">Everything you need</div>
+    <h2 class="section-title">Powerful features,<br/>simple interface</h2>
+    <p class="section-sub">No data engineering degree required. Just upload, click, and get clean data.</p>
+    <div class="features-grid">
+
+      <div class="card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Smart Auto-Clean</div>
+        <div class="feature-desc">One click. AI analyzes your dataset and automatically removes duplicates, fixes dates, fills missing values, and trims whitespace.</div>
+        <span class="feature-tag tag-hot">Most Used</span>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">PII Detection & Masking</div>
+        <div class="feature-desc">Automatically detects emails, phone numbers, credit cards, and national IDs. Mask, hash, or remove sensitive data. GDPR compliant.</div>
+        <span class="feature-tag tag-pro">Pro Feature</span>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">🔁</div>
+        <div class="feature-title">Pipeline Builder</div>
+        <div class="feature-desc">Record your cleaning steps as a reusable pipeline. Apply the same pipeline to hundreds of new files with one click.</div>
+        <span class="feature-tag tag-new">New</span>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">🔧</div>
+        <div class="feature-title">Column Operations</div>
+        <div class="feature-desc">Split columns, merge columns, extract patterns with Regex, change data types, and remove outliers — all with a visual interface.</div>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">AI Chat Interface</div>
+        <div class="feature-desc">Type commands in plain English (or Arabic, French…). "Remove rows where salary is empty" — AI generates and runs the code.</div>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Data Quality Score</div>
+        <div class="feature-desc">Get a 0–100 quality score for your dataset. See exactly what's wrong, how many values are missing, and which columns have outliers.</div>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">7 Data Sources</div>
+        <div class="feature-desc">Upload CSV/Excel, connect to PostgreSQL, MySQL, MongoDB, BigQuery, Google Sheets, or any REST API. All in one tool.</div>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">📜</div>
+        <div class="feature-title">History & Undo</div>
+        <div class="feature-desc">Every cleaning operation is saved. Undo any step, compare before/after, and never worry about losing your original data.</div>
+      </div>
+
+      <div class="card">
+        <div class="feature-icon">📥</div>
+        <div class="feature-title">Export Anywhere</div>
+        <div class="feature-desc">Download your clean data as CSV, Excel, or JSON. UTF-8 encoded — Arabic and special characters supported perfectly.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ───────────────────────────────────────────────────── -->
+<section id="how">
+  <div class="container" style="text-align:center">
+    <div class="section-label">Simple process</div>
+    <h2 class="section-title">Clean data in 3 steps</h2>
+    <p class="section-sub">From messy spreadsheet to production-ready data in under a minute.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Upload Your File</div>
+        <div class="step-desc">Drag & drop any CSV or Excel file, or connect directly to your database or API.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">AI Detects Issues</div>
+        <div class="step-desc">Get an instant quality score. See duplicates, missing values, outliers, and PII — all highlighted automatically.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Clean & Export</div>
+        <div class="step-desc">Click Smart Auto-Clean or apply individual fixes. Download your clean data in CSV, Excel, or JSON.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Save as Pipeline</div>
+        <div class="step-desc">Save your cleaning steps and replay them on any new file — perfect for recurring data workflows.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── LANGUAGES ─────────────────────────────────────────────────────── -->
+<section id="languages" style="background:var(--bg)">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Global reach</div>
+    <h2 class="section-title" style="text-align:center">Works in your language</h2>
+    <div class="lang-grid">
+      <div class="lang-pill"><span class="lang-flag">🇺🇸</span> English</div>
+      <div class="lang-pill"><span class="lang-flag">🇸🇦</span> العربية</div>
+      <div class="lang-pill"><span class="lang-flag">🇫🇷</span> Français</div>
+      <div class="lang-pill"><span class="lang-flag">🇪🇸</span> Español</div>
+      <div class="lang-pill"><span class="lang-flag">🇩🇪</span> Deutsch</div>
+      <div class="lang-pill"><span class="lang-flag">🇹🇷</span> Türkçe</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ───────────────────────────────────────────────────────── -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-label">Simple, transparent pricing</div>
+    <h2 class="section-title">Start free. Scale as you grow.</h2>
+    <p class="section-sub">No hidden fees. Cancel anytime.</p>
+    <div class="pricing-grid">
+
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">$0<span>/month</span></div>
+        <div class="plan-desc">Perfect for individuals trying the tool.</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> 1 file per session</li>
+          <li class="active"><span class="check">✓</span> Up to 10,000 rows</li>
+          <li class="active"><span class="check">✓</span> Basic cleaning tools</li>
+          <li class="active"><span class="check">✓</span> CSV export</li>
+          <li><span class="cross">✕</span> PII Masking</li>
+          <li><span class="cross">✕</span> Pipeline Builder</li>
+          <li><span class="cross">✕</span> Database connectors</li>
+        </ul>
+        <a href="#cta" class="btn btn-outline" style="width:100%;justify-content:center">Get Started Free</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card popular">
+        <div class="popular-badge">⭐ Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$19<span>/month</span></div>
+        <div class="plan-desc">For data analysts and small teams.</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> Unlimited files & rows</li>
+          <li class="active"><span class="check">✓</span> Smart Auto-Clean AI</li>
+          <li class="active"><span class="check">✓</span> PII Detection & Masking</li>
+          <li class="active"><span class="check">✓</span> Pipeline Builder</li>
+          <li class="active"><span class="check">✓</span> All 7 data sources</li>
+          <li class="active"><span class="check">✓</span> CSV / Excel / JSON export</li>
+          <li><span class="cross">✕</span> Team access</li>
+        </ul>
+        <a href="#cta" class="btn btn-primary" style="width:100%;justify-content:center">Start Pro →</a>
+      </div>
+
+      <!-- Team -->
+      <div class="pricing-card">
+        <div class="plan-name">Team</div>
+        <div class="plan-price">$49<span>/month</span></div>
+        <div class="plan-desc">For growing teams with shared workflows.</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> Everything in Pro</li>
+          <li class="active"><span class="check">✓</span> Up to 5 team members</li>
+          <li class="active"><span class="check">✓</span> Shared pipelines</li>
+          <li class="active"><span class="check">✓</span> Admin dashboard</li>
+          <li class="active"><span class="check">✓</span> Audit logs</li>
+          <li class="active"><span class="check">✓</span> Priority support</li>
+          <li><span class="cross">✕</span> On-premise</li>
+        </ul>
+        <a href="#cta" class="btn btn-outline" style="width:100%;justify-content:center">Start Team Trial</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="pricing-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">$199<span>/month</span></div>
+        <div class="plan-desc">For large organizations with compliance needs.</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> Everything in Team</li>
+          <li class="active"><span class="check">✓</span> Unlimited members</li>
+          <li class="active"><span class="check">✓</span> On-premise deployment</li>
+          <li class="active"><span class="check">✓</span> SSO / SAML</li>
+          <li class="active"><span class="check">✓</span> GDPR compliance reports</li>
+          <li class="active"><span class="check">✓</span> Dedicated support</li>
+          <li class="active"><span class="check">✓</span> Custom integrations</li>
+        </ul>
+        <a href="mailto:sales@aidataprep.com" class="btn btn-outline" style="width:100%;justify-content:center">Contact Sales</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── TESTIMONIALS ───────────────────────────────────────────────────── -->
+<section id="testimonials">
+  <div class="container">
+    <div class="section-label">What users say</div>
+    <h2 class="section-title">Loved by data teams</h2>
+    <div class="testi-grid">
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">"We used to spend 3 hours cleaning monthly sales data. With AI Data Prep it takes 4 minutes. The Pipeline Builder is a game changer for our team."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">S</div>
+          <div><div class="testi-name">Sarah K.</div><div class="testi-role">Data Analyst · E-commerce</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">"The PII masking feature alone justified the Pro plan for us. Our client data is now GDPR compliant in seconds. Incredible tool."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">M</div>
+          <div><div class="testi-name">Marco R.</div><div class="testi-role">CTO · FinTech Startup</div></div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">"أداة رائعة! الواجهة العربية ممتازة والذكاء الاصطناعي يفهم أوامري بالعربي مباشرة. أنصح كل محلل بيانات بها."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">أ</div>
+          <div><div class="testi-name">أحمد م.</div><div class="testi-role">محلل بيانات · شركة تقنية</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ───────────────────────────────────────────────────────────── -->
+<section id="cta" style="padding:7rem 0">
+  <div class="container">
+    <div class="cta-box">
+      <div class="badge">✦ Limited Early Access</div>
+      <h2 class="cta-title">Ready to clean your data<br/><span class="gradient-text">the smart way?</span></h2>
+      <p class="cta-sub">Join hundreds of analysts saving hours every week. Start free — no credit card required.</p>
+      <div class="cta-form">
+        <input class="cta-input" type="email" placeholder="Enter your work email…"/>
+        <a href="#" class="btn btn-primary">Get Early Access →</a>
+      </div>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-top:1rem">
+        🔒 No spam. Unsubscribe anytime. Your data stays private.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name">🧹 AI Data Prep</div>
+        <div class="footer-brand-desc">Intelligent data cleaning for analysts, engineers, and businesses. Clean data — faster.</div>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#cta">Get Started</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Use Cases</h4>
+        <ul>
+          <li><a href="#">Sales Data</a></li>
+          <li><a href="#">HR Reports</a></li>
+          <li><a href="#">Financial Data</a></li>
+          <li><a href="#">Marketing Lists</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="mailto:sales@aidataprep.com">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 AI Data Prep. All rights reserved.</div>
+      <div class="footer-langs">
+        <span class="footer-lang">🇺🇸 EN</span>
+        <span class="footer-lang">🇸🇦 AR</span>
+        <span class="footer-lang">🇫🇷 FR</span>
+        <span class="footer-lang">🇪🇸 ES</span>
+        <span class="footer-lang">🇩🇪 DE</span>
+        <span class="footer-lang">🇹🇷 TR</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Nav scroll effect
+window.addEventListener('scroll',()=>{
+  document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50)
+})
+
+// Fade-up on scroll
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.style.opacity='1'
+      e.target.style.transform='translateY(0)'
+    }
+  })
+},{threshold:0.1})
+
+document.querySelectorAll('.card,.step,.testi-card,.pricing-card,.lang-pill').forEach(el=>{
+  el.style.opacity='0'
+  el.style.transform='translateY(20px)'
+  el.style.transition='opacity .5s ease, transform .5s ease'
+  observer.observe(el)
+})
+</script>
+</body>
+</html>

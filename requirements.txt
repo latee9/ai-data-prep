@@ -1,0 +1,15 @@
+streamlit
+pandas
+openpyxl
+google-generativeai
+python-dotenv
+plotly
+sqlalchemy
+psycopg2-binary
+mysql-connector-python
+gspread
+pandas-gbq
+xlrd
+google-auth
+pymongo
+requests
