@@ -1,5 +1,6 @@
 import streamlit as st
 import io
+import os
 import pandas as pd
 
 from ui.styles import (
@@ -126,6 +127,48 @@ with st.sidebar:
         ],
         label_visibility="collapsed"
     )
+
+    # ── Feedback ──────────────────────────────────────────────────────────
+    st.divider()
+    render_sidebar_section("💬 Feedback")
+    FORM_URL = st.secrets.get("FEEDBACK_FORM_URL", "https://forms.google.com")
+    st.markdown(f"""
+<a href="{FORM_URL}" target="_blank" style="
+    display:flex; align-items:center; justify-content:center; gap:.5rem;
+    background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(108,99,255,.05));
+    border:1px solid rgba(108,99,255,.3); border-radius:10px;
+    padding:.55rem 1rem; color:rgba(255,255,255,.75);
+    font-size:.84rem; font-weight:500; text-decoration:none;
+    transition:all .2s; margin:.2rem .3rem;
+">
+    ⭐ Rate & Give Feedback
+</a>
+""", unsafe_allow_html=True)
+
+    with st.expander("📝 Quick feedback", expanded=False):
+        rating = st.select_slider(
+            "How would you rate the app?",
+            options=["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"],
+            value="⭐⭐⭐⭐⭐",
+            key="rating_slider"
+        )
+        feedback_text = st.text_area(
+            "Your feedback (optional)",
+            placeholder="What do you love? What's missing?",
+            key="feedback_text", height=80
+        )
+        if st.button("Send Feedback ✉️", use_container_width=True, key="send_feedback"):
+            import json, datetime
+            fb = {"rating": rating, "text": feedback_text,
+                  "time": str(datetime.datetime.now())}
+            feedbacks = []
+            if os.path.exists("feedbacks.json"):
+                with open("feedbacks.json") as f:
+                    feedbacks = json.load(f)
+            feedbacks.append(fb)
+            with open("feedbacks.json", "w") as f:
+                json.dump(feedbacks, f, ensure_ascii=False, indent=2)
+            st.success("Thank you! 🙏")
 
 # ── عنوان التطبيق ─────────────────────────────────────────────────────────────
 render_hero(get_text("app_title"), get_text("app_subtitle"))
