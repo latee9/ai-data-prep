@@ -131,7 +131,10 @@ with st.sidebar:
     # ── Feedback ──────────────────────────────────────────────────────────
     st.divider()
     render_sidebar_section("💬 Feedback")
-    FORM_URL = st.secrets.get("FEEDBACK_FORM_URL", "https://forms.google.com")
+    FORM_URL = st.secrets.get(
+        "FEEDBACK_FORM_URL",
+        "https://docs.google.com/forms/d/e/1FAIpQLSdU0Gu2RJdLwDgEisTgl2bd_8TDJOQSNelywwaQuN2IFIY99g/viewform",
+    )
     st.markdown(f"""
 <a href="{FORM_URL}" target="_blank" style="
     display:flex; align-items:center; justify-content:center; gap:.5rem;
