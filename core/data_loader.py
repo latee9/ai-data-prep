@@ -1,6 +1,31 @@
 # core/data_loader.py
+import re
 import pandas as pd
 from pathlib import Path
+
+# رقم بصفر بادئ ذو دلالة (مثل أرقام الهواتف والهويات) — لا يجب تحويله لرقمي
+_LEADING_ZERO_RE = re.compile(r"^0\d+$")
+
+
+def _infer_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    يحوّل أعمدة CSV النصية (المقروءة كنص للحفاظ على الأصفار البادئة) إلى نوع
+    رقمي عند الإمكان — لكنه يتجاهل الأعمدة التي تحتوي قيماً بصفر بادئ ذي دلالة
+    (كأرقام الهواتف والهويات الوطنية)، لأن تحويلها لرقمي يفقدها الصفر البادئ
+    ويجعلها عرضة لاحقاً لعمليات كملء القيم الناقصة بالـ median التي تنتج
+    أرقاماً عشرية لا معنى لها لرقم هاتف.
+    """
+    df_out = df.copy()
+    for col in df_out.columns:
+        values = df_out[col].dropna().astype(str).str.strip()
+        if values.empty:
+            continue
+        if values.str.match(_LEADING_ZERO_RE).any():
+            continue
+        converted = pd.to_numeric(df_out[col], errors="coerce")
+        if converted.notna().sum() == df_out[col].notna().sum():
+            df_out[col] = converted
+    return df_out
 
 
 def load_file(uploaded_file) -> pd.DataFrame:
@@ -19,8 +44,10 @@ def load_file(uploaded_file) -> pd.DataFrame:
         for encoding in ["utf-8", "utf-8-sig", "cp1256", "latin-1"]:
             try:
                 uploaded_file.seek(0)
-                df = pd.read_csv(uploaded_file, encoding=encoding)
-                return df
+                # dtype=str يحافظ على الأصفار البادئة (أرقام هواتف/هويات) أثناء
+                # القراءة، ثم نحوّل الأعمدة الرقمية الفعلية لاحقاً بأمان.
+                df = pd.read_csv(uploaded_file, encoding=encoding, dtype=str)
+                return _infer_numeric_columns(df)
             except (UnicodeDecodeError, Exception):
                 continue
         raise ValueError("تعذّر قراءة الملف — جرّب حفظه بترميز UTF-8")
