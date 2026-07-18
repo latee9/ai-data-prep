@@ -19,17 +19,18 @@ def smart_clean(df: pd.DataFrame) -> tuple:
     df_clean = df.copy()
     before_rows = len(df_clean)
 
-    # ── 1. إزالة الصفوف المكررة ──────────────────────────────────────────────
-    dup_count = df_clean.duplicated().sum()
-    if dup_count > 0:
-        df_clean, _ = remove_duplicates(df_clean)
-        report.append(f"✅ Removed **{dup_count}** duplicate rows")
-
-    # ── 2. إزالة المسافات الزائدة من النصوص ──────────────────────────────────
+    # ── 1. إزالة المسافات الزائدة من النصوص ──────────────────────────────────
+    # (تُنفَّذ قبل إزالة التكرار حتى لا تُخفي المسافات الزائدة صفوفاً مكررة فعلياً)
     text_cols = df_clean.select_dtypes(include="object").columns
     if len(text_cols) > 0:
         df_clean = trim_whitespace(df_clean)
         report.append(f"✅ Trimmed whitespace in **{len(text_cols)}** text columns")
+
+    # ── 2. إزالة الصفوف المكررة ──────────────────────────────────────────────
+    dup_count = df_clean.duplicated().sum()
+    if dup_count > 0:
+        df_clean, _ = remove_duplicates(df_clean)
+        report.append(f"✅ Removed **{dup_count}** duplicate rows")
 
     # ── 3. توحيد التواريخ ─────────────────────────────────────────────────────
     date_cols_found = []
